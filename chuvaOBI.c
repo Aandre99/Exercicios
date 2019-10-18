@@ -1,82 +1,153 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
-#define max(x,y) (x > y) ? (x):(y)
+#define min(x,y) (x < y) ? (x):(y)
 
-int *A;
-int *ST;
+typedef struct seg{
+	int sum;
+	int low;
+}seg_tree;
 
-void show(int left, int right)
+int* A;
+seg_tree* Seg;
+
+void build(int i, int left, int right)
 {
-    int i;
-    for(i=left;i<right;i++)
-    {
-        printf("%d ", ST[i]);
-    }
+	if(left == right){
+		Seg[i].sum = A[left];
+		Seg[i].low = A[left];
+		return;
+	}
+	else
+	{
+		int mid = (right+left)/2;
+		build(2*i,left,mid);
+		build(2*i+1,mid+1,right);
 
+        Seg[i].sum = Seg[2*i].sum + Seg[2*i+1].sum;
+		Seg[i].low = min(Seg[2*i].low,Seg[2*i+1].low);
+
+	}
 }
-void build(int i,int left, int right)
+int Sum(int i, int left, int right, int x, int y)
 {
-    if(left == right)
-    {
-        ST[i] = left;
-        return;
-    }
-    else
-    {
-        int mid = (right+left)/2;
-        build(2*i,left,mid);
-        build(2*i+1,mid+1,right);
-
-        int a1 = ST[2*i];
-        int a2 = ST[2*i+1];
-
-        ST[i] = (A[a1] > A[a2]) ? a1:a2;
-    }
-    
+	if(y < left || right < x){
+		return 0;
+	}
+	if(left >= x && right <= y){
+		return Seg[i].sum;
+	}
+	else
+	{
+		int mid = (right+left)/2;
+		return (Sum(2*i,left,mid,x,y) + Sum(2*i+1,mid+1,right,x,y));
+	}	
 }
-int query(int i, int left, int right, int x, int y)
-{
-    if(y < left || right < x){
-        return -1;
-    }
-    if( x <= left && right <= y)
-    {
-        return ST[i];
-    }
-    else
-    {
-        int mid = (right+left)/2;
-        int a1 = query(2*i,left,mid,x,y);
-        int a2 = query(2*i+1,mid+1,right,x,y);
 
-        if(a1 == -1) return a2;
-        if(a2 == -1) return a1;         
-        
-        return (A[a1] > A[a2]) ? a1:a2;
-    }
-    
+int small_Value(int i, int left, int right, int x, int y)
+{
+	if(left > y || right < x){
+		return INT_MAX;
+	}
+	if(left >= x && right <= y){
+		return Seg[i].low;
+	}
+	else
+	{
+		int mid = (right+left)/2;
+		return min(small_Value(2*i,left,mid,x,y),small_Value(2*i+1,mid+1,right,x,y));
+	}	
+}
+void Query(int i, int left, int right, int x, int y, int* sumValue, int* smallValue)
+{
+	if(left > y ||  right < x){
+		return;
+	}
+	if(left >= x && right <= y){
+		*sumValue += Seg[i].sum;
+		printf("somando mais %d\n", Seg[i].sum);
+		*smallValue = min(*smallValue,Seg[i].low);
+		return;
+	}
+	else
+	{
+		int mid = (right+left)/2;
+		Query(2*i,left,mid,x,y,sumValue,smallValue);
+		Query(2*i+1,mid+1,right,x,y,sumValue,smallValue);
+	}
+}
+void modify(int i, int pos, int value, int left, int right)
+{
+	Seg[i].sum += (value - A[pos]);
+	if(left == right){
+		Seg[i].low = value;
+        return ;
+	}
+	else
+	{
+		int mid = (right+left)/2;
+		if(pos <= mid){
+			modify(2*i,pos,value,left,mid);
+		}else{
+			modify(2*i+1,pos,value,mid+1,right);
+		}
+
+		int p1 = Seg[2*i].low;
+		int p2 = Seg[2*i+1].low;
+
+		Seg[i].low = (p1 < p2) ? p1:p2;
+	}	
 }
 int main()
 {
-    int n, i, x;
+	int n,m,i, in1, in2;
+	char Op;
 
-    scanf("%d", &n);
+	scanf("%d", &n);
 
-    A = (int*)calloc(n,sizeof(int));
-    ST = (int*)calloc(4*n,sizeof(int));
-    
-    for (i = 0; i < n; i++){
-        scanf("%d", &A[i]);
-    }
+	A = (int*)calloc(n,sizeof(int));
+	Seg = (seg_tree*)calloc(4*n,sizeof(seg_tree));
 
-    build(1,0,n-1);
-    show(1,4*n);
+	for ( i = 0; i < n; i++){
+		scanf("%d", &A[i]);
+	}
 
-    int p = query(1,0,3,1,2);
-    printf("v[%d] = %d", p,A[p]);
-    
-    free(A);
-    free(ST);
-    return 0;
+	build(1,0,n-1);
+
+   	scanf("%d", &m);
+	getchar();
+	
+	int k;
+
+	for ( i = 0; i < m; i++)
+	{
+		scanf("%c%d%d",&Op,&in1, &in2);
+		getchar();
+		if(Op == 'Q'){
+
+			int r1 = Sum(1,0,n-1,in1,in2);
+			/*int r2 = small_Value(1,0,n-1,in1,in2);
+		*/	
+			int summ = 0, small = INT_MAX;
+			Query(1,0,n-1,in1,in2,&summ,&small);
+			printf("%d %d\n", r1, small);
+		}
+		else if(Op == 'U'){
+			modify(1,in1,in2,0,n-1);
+			/*printf("Soma\n");
+			for ( k = 0; k < 4*n; k++){
+			printf("%d ", Seg[k].sum);
+			}
+			printf("MENor\n");
+			for ( k = 0; k < 4*n; k++){
+			printf("%d ", Seg[k].low);
+			}
+			*/	
+		}
+	}
+
+	free(Seg);
+	free(A);
+	return 0;
 }

@@ -16,7 +16,7 @@ void build(int i, int left, int right)
 {
 	if(left == right){
 		Seg[i].sum = A[left];
-		Seg[i].low = left;
+		Seg[i].low = A[left];
 		return;
 	}
 	else
@@ -52,7 +52,7 @@ int Sum(int i, int left, int right, int x, int y)
 int small_Value(int i, int left, int right, int x, int y)
 {
 	if(left > y || right < x){
-		return -1;
+		return INT_MAX;
 	}
 	if(left >= x && right <= y){
 		return Seg[i].low;
@@ -60,21 +60,18 @@ int small_Value(int i, int left, int right, int x, int y)
 	else
 	{
 		int mid = (right+left)/2;
-		int a1 = small_Value(2*i,left,mid,x,y);
-		int a2 = small_Value(2*i+1,mid+1,right,x,y);
+		return min(small_Value(2*i,left,mid,x,y),small_Value(2*i+1,mid+1,right,x,y);
 		
-		if(a1 == -1) return a2;
-		if(a2 == -1) return a1;
-
-		return (A[a1] < A[a2]) ? a1:a2;
 	}	
 }
 void modify(int i, int pos, int value, int left, int right)
 {
 	Seg[i].sum += (value - A[pos]);
+  printf("Nova soma [%d,%d] = %d\n", left,right,Seg[i].sum);
 
 	if(left == right){
 		A[pos] = value;
+    Seg[i].low = value;
 	}
 	else
 	{
@@ -86,15 +83,12 @@ void modify(int i, int pos, int value, int left, int right)
 		{
 			modify(2*i+1,pos,value,mid+1,right);
 		}
-
-		int p1 = Seg[2*i].low;
-		int p2 = Seg[2*i+1].low;
-		Seg[i].low = (A[p1] < A[p2]) ? A[p1]:A[p2];
+		Seg[i].low = min(Seg[2*i].low,Seg[2*i+1].low);
 	}
 }
 int main()
 {
-	int n,m,i=0, in1, in2;
+	int n,m,i, in1, in2;
 	char Op;
 
 	scanf("%d", &n);
@@ -108,24 +102,10 @@ int main()
 
 	build(1,0,n-1);
 
-    scanf("%d", &m);
-	getchar();
-	
-	for ( i = 0; i < m; i++)
-	{
-		scanf("%c%d%d",&Op,&in1, &in2);
-		getchar();
-		if(Op == 'Q'){
+  int a = Sum(1,0,7,0,4);
+  int b = small_Value(1,0,7,0,4);
 
-			int r1 = Sum(1,0,n-1,in1,in2);
-			int r2 = small_Value(1,0,n-1,in1,in2);
-
-			printf("%d %d\n", r1, A[r2]);
-		}
-		else{
-			modify(1,in1,in2,0,n-1);
-		}
-	}
+  printf("Soma: %d , menor: %d", a,b);
 
 	free(Seg);
 	free(A);
