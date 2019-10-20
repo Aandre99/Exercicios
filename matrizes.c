@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #define max(x,y) (x > y) ? (x):(y)
 
 int *A;
 int *ST;
-int *V;
 
 void show(int* B, int left, int right)
 {
@@ -58,9 +58,28 @@ int query(int i, int left, int right, int x, int y)
     }
     
 }
-void divide_and_conquer(int left, int right,int big, int* cont, int size){
-
+int query2(int i, int left, int right, int x, int y)
+{
+    if(y < left || right < x){
+        return -INT_MAX;
+    }
+    if( x <= left && right <= y)
+    {
+        return ST[i];
+    }
+    else
+    {
+        int mid = (right+left)/2;
+        int a1 = query2(2*i,left,mid,x,y);
+        int a2 = query2(2*i+1,mid+1,right,x,y);
+        
+        return (A[a1] > A[a2]) ? a1:a2;
+    }
+    
 }
+//void divide_and_conquer(int left, int right,int big, int* cont, int size){
+//
+//}
 int main()
 {
     int n, i, x;
@@ -70,7 +89,6 @@ int main()
     scanf("%d", &n);
 
     A = (int*)calloc(n,sizeof(int));
-    V = (int*)calloc(n,sizeof(int));
     ST = (int*)calloc(4*n,sizeof(int));
     
     for (i = 0; i < n; i++){
@@ -78,8 +96,9 @@ int main()
     }
 
     build(1,0,n-1);
-    //divide_and_conquer();
     show(ST,0,4*n);
+
+	printf("%d", query2(1,0,n-1,0,n-1));
 
     printf("%d", cont);
     free(A);
