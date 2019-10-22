@@ -6,6 +6,8 @@
 
 int *A;
 int *ST;
+int* Full;
+
 
 void show(int* B, int left, int right)
 {
@@ -14,6 +16,7 @@ void show(int* B, int left, int right)
     {
         printf("%d ", B[i]);
     }
+    printf("\n\n");
 
 }
 void build(int i,int left, int right)
@@ -39,7 +42,7 @@ void build(int i,int left, int right)
 int query(int i, int left, int right, int x, int y)
 {
     if(y < left || right < x){
-        return 0;
+        return -1;
     }
     if( x <= left && right <= y)
     {
@@ -48,35 +51,52 @@ int query(int i, int left, int right, int x, int y)
     else
     {
         int mid = (right+left)/2;
+
         int a1 = query(2*i,left,mid,x,y);
         int a2 = query(2*i+1,mid+1,right,x,y);
+
+        if(a1 == -1) return a2;
+        if(a2 == -1) return a1;
  
         return (A[a1] > A[a2]) ? a1:a2;
     }
     
 }
 
-void divide_and_conquer(int left, int right, int* cont, int size){
+void Rain(int left, int right, int* cont, int size, int k){
 
-    if(left == right){
+    if(k > 10){
+        return;
+    }
+    if(left == right || right < left){
         return;
     }else{
 
         int mid = (right+left)/2;
 
-        int bigRight = query(1,0,size-1,left,mid);
-        int bigLeft = query(1,0,size-1,mid+1,right);
+        printf("Buscando de %d ate %d\n", mid,right);
+        int bigRight = query(1,0,size,mid,right);
+        printf("Buscando de %d ate %d\n", left,mid);
+        int bigLeft = query(1,0,size,left,mid);
 
-        divide_and_conquer(left,mid,cont,size);
-        divide_and_conquer(mid+1,right,cont,size);
+        printf("%d %d\n", bigLeft,bigRight);
 
         int i;
-        for (i = left; i < mid; i++)
+        int small = (A[bigLeft] < A[bigRight]) ? A[bigLeft] : A[bigRight];
+        
+        for (i = bigLeft; i <= bigRight; i++)
         {
-            if(A[i] < A[bigRight] && A[i] < A[bigLeft]){
+            if(A[i] < small && !Full[i]){
+
                 (*cont) ++;
+                Full[i] = 1;
             }
         }
+
+        show(Full,0,size);
+
+        Rain(left,bigLeft,cont,size,k+1);
+        Rain(bigRight,right,cont,size,k+1);
     }
 }
 int main()
@@ -89,14 +109,16 @@ int main()
 
     A = (int*)calloc(n,sizeof(int));
     ST = (int*)calloc(4*n,sizeof(int));
+    Full = (int*)calloc(n,sizeof(int));
     
     for (i = 0; i < n; i++){
+        Full[i] = 0;
         scanf("%d", &A[i]);
     }
 
     build(1,0,n-1);
     //show(ST,0,4*n);
-	divide_and_conquer(0,n-1,&cont,n);
+	Rain(0,n-1,&cont,n-1,0);
 
     printf("%d", cont);
     free(A);
